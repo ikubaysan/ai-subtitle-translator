@@ -2,7 +2,6 @@
 import os
 from typing import List
 import pytesseract
-from pysrt import SubRipFile
 
 from modules.GoogleAIAPIClient import GoogleAIAPIClient
 from modules.SupToSrtConverter.SupToSrtConverter import SupToSrtConverter
