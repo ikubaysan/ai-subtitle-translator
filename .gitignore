@@ -2,3 +2,4 @@ output/
 input/
 *.pyc
 .idea
+config.ini

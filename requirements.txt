@@ -2,3 +2,4 @@ pytesseract
 opencv-python
 tqdm
 pysrt
+google-generativeai
