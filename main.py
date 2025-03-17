@@ -2,16 +2,20 @@
 import os
 from typing import List
 import pytesseract
+from pysrt import SubRipFile
+
 from modules.GoogleAIAPIClient import GoogleAIAPIClient
 from modules.SupToSrtConverter.SupToSrtConverter import SupToSrtConverter
 from modules.Config import Config
 from modules.Loggers import configure_console_logger
+from modules.Translation import translate_srt
 import logging
 
 configure_console_logger()
 logger = logging.getLogger(__name__)
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
 
 # === Main Runner ===
 if __name__ == "__main__":
@@ -33,5 +37,8 @@ if __name__ == "__main__":
 
     # 2) Translate the English SRT to Japanese with furigana
     google_api_client = GoogleAIAPIClient(api_key=config.google_ai_api_key, model_name=config.google_ai_model_name)
-    converter.translate_srt_to_japanese_with_furigana(google_ai_client=google_api_client)
-    #print("Japanese translation with furigana completed successfully.")
+    translate_srt(
+        input_srt_filepath=output_file,
+        output_srt_filepath=output_file.replace(".srt", ".ja.srt"),
+        google_ai_client=google_api_client)
+    print("Japanese translation completed successfully.")

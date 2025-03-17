@@ -171,37 +171,6 @@ class SupToSrtConverter:
         print(f"Saving SRT file: {self.output_file}")
         self.srt.save(self.output_file, encoding='utf-8')
 
-    def translate_srt_to_japanese_with_furigana(self, google_ai_client: GoogleAIAPIClient) -> None:
-        """
-        Sends the entire English SRT text to the Google Generative AI model,
-        asking it to translate to Japanese with furigana in parentheses right after any kanji.
-        Saves the result to a new SRT file that indicates it's translated to Japanese.
-        """
-        # Convert the loaded SubRipFile to raw text
-        #english_srt_text = str(self.srt)
-        english_srt_text = str(self.srt.data)
-
-        # Create a prompt instructing the AI how to translate and how to handle furigana
-        # Adjust the instruction to your preference:
-        prompt = (
-            "Please translate the following SRT subtitles from English to Japanese. "
-            "For any kanji, add the furigana in parentheses immediately after the kanji. "
-            "Preserve the same time stamps, line numbering, and overall SRT structure. "
-            "Output only the translated SRT (no extra explanations). "
-            "Here is the SRT:\n\n"
-            f"{english_srt_text}"
-        )
-
-        # Ask the model to translate
-        translated_text = google_ai_client.send_prompt(prompt)
-
-        # Save to a new SRT file (e.g., Archer.S01E01.ja-furigana.srt)
-        base, ext = os.path.splitext(self.output_file)
-        translated_srt_filename = base + ".ja-furigana.srt"
-        print(f"Saving translated SRT file: {translated_srt_filename}")
-        with open(translated_srt_filename, 'w', encoding='utf-8') as f:
-            f.write(translated_text)
-
     def convert(self) -> None:
         """Runs the full OCR-based conversion process (English SRT)."""
         self.process_ocr()

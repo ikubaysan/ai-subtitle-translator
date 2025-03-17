@@ -39,6 +39,6 @@ class GoogleAIAPIClient:
         """
         Sends a single prompt to the Google Generative AI model and returns the text response.
         """
-        messages = [{"role": "user", "content": prompt}]
+        messages = [{"role": "user", "parts": [prompt]}]
         response = self.model.generate_content(messages, safety_settings=self.safe)
         return response.text
