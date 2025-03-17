@@ -2,6 +2,7 @@
 import os
 import pytesseract
 import logging
+import argparse
 
 from modules.GoogleAIAPIClient import GoogleAIAPIClient
 from modules.SupToSrtConverter.SupToSrtConverter import SupToSrtConverter
@@ -21,6 +22,7 @@ def ensure_subtitles_for_video(video_path: str, google_api_client: GoogleAIAPICl
     Given a path to a video (mp4/mkv), ensure it ends up with:
       - An English SRT (video_path + '.srt')
       - A Japanese SRT (video_path + '.ja.srt')
+
     Steps:
       1) Check if .ja.srt already exists. If so, skip everything.
       2) Otherwise, check if .srt already exists.
@@ -32,42 +34,34 @@ def ensure_subtitles_for_video(video_path: str, google_api_client: GoogleAIAPICl
     eng_srt_path = base + ".srt"
     jpn_srt_path = base + ".ja.srt"
 
-    # If Japanese subtitle already exists, skip entirely
     if os.path.exists(jpn_srt_path):
         logger.info(f"Skipping '{video_path}' because '{jpn_srt_path}' already exists.")
         return
 
-    # If no English SRT, attempt to extract from video
     if not os.path.exists(eng_srt_path):
         logger.info(f"No SRT found for '{video_path}'. Attempting extraction...")
         extractor = VideoSubtitleExtractor(video_path)
-        extracted_path = extractor.extract_subtitles()  # might be .extracted.srt or .extracted.sup
+        extracted_path = extractor.extract_subtitles()
 
         if extracted_path is None:
             logger.info(f"No subtitles found or failed to extract for '{video_path}'. Skipping.")
             return
 
-        # If we got a SUP file, convert to SRT
         if extracted_path.suffix.lower() == ".sup":
             logger.info(f"Converting SUP to SRT for '{video_path}'.")
             converter = SupToSrtConverter(str(extracted_path), eng_srt_path)
             converter.convert()
             logger.info("English SRT conversion (from SUP) completed successfully.")
-            # Delete the extracted SUP file
             os.remove(str(extracted_path))
             logger.info(f"Deleted extracted SUP file '{extracted_path}'.")
         else:
-            # If we extracted SRT directly, rename/move the extracted to .srt if needed
-            # (If you'd prefer to keep the .extracted.srt naming, you can skip renaming.)
             os.rename(str(extracted_path), eng_srt_path)
             logger.info(f"Renamed extracted SRT to '{eng_srt_path}'.")
 
-    # At this point, eng_srt_path should exist (unless extraction failed).
     if not os.path.exists(eng_srt_path):
         logger.info(f"Could not find or create an English SRT for '{video_path}'. Skipping translation.")
         return
 
-    # Finally, translate into Japanese, if we haven't done so already
     logger.info(f"Translating '{eng_srt_path}' to '{jpn_srt_path}'.")
     translate_srt(
         input_srt_filepath=eng_srt_path,
@@ -78,17 +72,32 @@ def ensure_subtitles_for_video(video_path: str, google_api_client: GoogleAIAPICl
 
 
 if __name__ == "__main__":
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Ensure subtitles for all videos in a given directory.")
+
+    # Allow passing the root directory either:
+    # 1. As a positional argument: `python script.py /path/to/videos`
+    # 2. As an optional named argument: `python script.py --root-directory /path/to/videos`
+    parser.add_argument("root_directory", nargs="?", default=None, help="Root directory to scan for video files.")
+    parser.add_argument("--root-directory", dest="root_directory", help="(Optional) Specify root directory for videos.")
+
+    args = parser.parse_args()
+
+    # If no directory is provided, print usage and exit
+    if not args.root_directory:
+        parser.print_help()
+        exit(1)
+
+    root_directory = args.root_directory
+
     # Load config
     config = Config('config.ini')
 
-    # Create your Google API client
+    # Create Google API client
     google_api_client = GoogleAIAPIClient(
         api_key=config.google_ai_api_key,
         model_name=config.google_ai_model_name
     )
-
-    # Directory to scan recursively
-    root_directory = r"C:\Users\PC\Desktop\misc\coding\repos\my_repos\ai-subtitle-translator\input\archer"
 
     # Walk the directory tree for video files
     for dirpath, dirnames, filenames in os.walk(root_directory):
