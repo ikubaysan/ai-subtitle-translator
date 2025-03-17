@@ -41,16 +41,18 @@ class VideoSubtitleExtractor:
             print(f"No subtitles found in {self.video_path.name}")
             return None
 
-        output_file = self.video_path.with_suffix(f".extracted.{subtitle_type}")
+        subtitle_filetype = "srt" if subtitle_type == "srt" else "sup"
+
+        output_file = self.video_path.with_suffix(f".extracted.{subtitle_filetype}")
         command = [
             "ffmpeg",
             "-i", str(self.video_path),
             "-map", "0:s:0",
-            "-c:s", "copy" if subtitle_type == "pgs" else "srt",
+            "-c:s", "copy" if subtitle_type == "pgs" else "sup",
             str(output_file)
         ]
 
-        print(f"Extracting {subtitle_type.upper()} subtitles from: {self.video_path}")
+        print(f"Extracting {subtitle_type.upper()} subtitles from: {self.video_path} with command: {command}")
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         if result.returncode == 0:

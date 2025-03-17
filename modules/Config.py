@@ -10,3 +10,5 @@ class Config:
 
         self.google_ai_api_key = self.config.get('google_ai_api', 'api_key')
         self.google_ai_model_name = self.config.get('google_ai_api', 'model_name')
+
+        self.translate_to_language = self.config.get('translation', 'translate_to_language')
