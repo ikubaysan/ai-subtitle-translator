@@ -12,3 +12,5 @@ class Config:
         self.google_ai_model_name = self.config.get('google_ai_api', 'model_name')
 
         self.translate_to_language = self.config.get('translation', 'translate_to_language')
+
+        self.delete_pgs_files = self.config.getboolean('files', 'delete_pgs_files')

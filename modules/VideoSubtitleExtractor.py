@@ -22,7 +22,7 @@ class VideoSubtitleExtractor:
             raise FFmpegNotFoundError("FFmpeg is not installed or not found in PATH.")
 
     def detect_subtitles(self) -> Optional[str]:
-        """Detects whether the video has SRT or PGS subtitles."""
+        """Detects whether the video has SRT or PGS (.sup) subtitles."""
         command = ["ffprobe", "-i", str(self.video_path), "-show_streams", "-select_streams", "s", "-loglevel", "error"]
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 

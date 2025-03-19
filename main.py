@@ -8,7 +8,7 @@ from modules.GoogleAIAPIClient import GoogleAIAPIClient
 from modules.SupToSrtConverter.SupToSrtConverter import SupToSrtConverter
 from modules.Config import Config
 from modules.Loggers import configure_console_logger
-from modules.Translation import translate_srt
+from modules.Translation import Translation
 from modules.VideoSubtitleExtractor import VideoSubtitleExtractor
 
 configure_console_logger()
@@ -17,7 +17,10 @@ logger = logging.getLogger(__name__)
 # Point Tesseract to the proper executable if needed.
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
-def ensure_subtitles_for_video(video_path: str, google_api_client: GoogleAIAPIClient):
+def ensure_subtitles_for_video(video_path: str,
+                               translate_to_language: str,
+                               delete_pgs_files: bool,
+                               google_api_client: GoogleAIAPIClient):
     """
     Given a path to a video (mp4/mkv), ensure it ends up with:
       - An English SRT (video_path + '.srt')
@@ -52,8 +55,9 @@ def ensure_subtitles_for_video(video_path: str, google_api_client: GoogleAIAPICl
             converter = SupToSrtConverter(str(extracted_path), eng_srt_path)
             converter.convert()
             logger.info("English SRT conversion (from SUP) completed successfully.")
-            os.remove(str(extracted_path))
-            logger.info(f"Deleted extracted SUP file '{extracted_path}'.")
+            if delete_pgs_files:
+                os.remove(str(extracted_path))
+                logger.info(f"Deleted extracted PGS (.sup) file '{extracted_path}'.")
         else:
             os.rename(str(extracted_path), eng_srt_path)
             logger.info(f"Renamed extracted SRT to '{eng_srt_path}'.")
@@ -63,9 +67,10 @@ def ensure_subtitles_for_video(video_path: str, google_api_client: GoogleAIAPICl
         return
 
     logger.info(f"Translating '{eng_srt_path}' to '{jpn_srt_path}'.")
-    translate_srt(
+    Translation.translate_srt(
         input_srt_filepath=eng_srt_path,
         output_srt_filepath=jpn_srt_path,
+        translate_to_language=translate_to_language,
         google_ai_client=google_api_client
     )
     logger.info(f"Japanese translation completed for '{video_path}'.")
@@ -104,4 +109,7 @@ if __name__ == "__main__":
         for filename in filenames:
             if filename.lower().endswith(('.mp4', '.mkv')):
                 full_path = os.path.join(dirpath, filename)
-                ensure_subtitles_for_video(full_path, google_api_client)
+                ensure_subtitles_for_video(video_path=full_path,
+                                           translate_to_language=config.translate_to_language,
+                                           delete_pgs_files=config.delete_pgs_files,
+                                           google_api_client=google_api_client)

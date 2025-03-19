@@ -3,3 +3,4 @@ tqdm
 pysrt
 google-generativeai
 pytest
+babel
