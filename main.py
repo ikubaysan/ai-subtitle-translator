@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import sys
+
 import pytesseract
 import logging
 import argparse
@@ -187,6 +189,20 @@ def gather_files_to_process(
 
 
 if __name__ == "__main__":
+
+    # Load config
+    config = Config('config.ini')
+
+    if config.web_enabled:
+        from modules.WebServer import app, init_server
+        output_dir = os.path.join(os.path.dirname(__file__), "web_output")
+        init_server(config, output_dir)
+        host = config.config.get("web", "host", fallback="0.0.0.0")
+        port = config.config.getint("web", "port", fallback=5000)
+        logger.info("Web mode enabled. Starting server for AI Subtitle Translator on http://%s:%d", host, port)
+        app.run(host=host, port=port, debug=False)
+        sys.exit(0)
+
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
         description="Translate subtitles from videos or SRT files."
@@ -229,8 +245,6 @@ if __name__ == "__main__":
 
     input_path = args.input_path
 
-    # Load config
-    config = Config('config.ini')
 
     # Create Google API client
     google_api_client = GoogleAIAPIClient(

@@ -14,3 +14,9 @@ class Config:
         self.translate_to_language = self.config.get('translation', 'translate_to_language')
 
         self.delete_pgs_files = self.config.getboolean('files', 'delete_pgs_files')
+
+
+        # Web server settings (all optional, safe defaults)
+        self.web_enabled = self.config.getboolean('web', 'enabled', fallback=False)
+        self.web_host = self.config.get('web', 'host', fallback='0.0.0.0')
+        self.web_port = self.config.getint('web', 'port', fallback=5000)

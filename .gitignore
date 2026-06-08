@@ -3,3 +3,4 @@ input/
 *.pyc
 .idea
 config.ini
+web_output/

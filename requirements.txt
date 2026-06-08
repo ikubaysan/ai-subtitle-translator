@@ -4,3 +4,4 @@ pysrt
 google-generativeai
 pytest
 babel
+flask
