@@ -8,7 +8,7 @@ def test_translate_srt():
     config = Config('../config.ini')
     google_api_client = GoogleAIAPIClient(api_key=config.google_ai_api_key, model_name=config.google_ai_model_name)
 
-    output_file = r"C:\Users\PC\Desktop\misc\coding\repos\my_repos\ai-subtitle-translator\output\archer\Archer.S01E01.srt"
+    output_file = r"C:\Users\PC\Desktop\misc\coding\repos\my_repos\ai-subtitle-translator\input\Indiana.Jones.And.The.Last.Crusade.1989.1080p.BluRay.x264.YIFY.srt"
 
     Translation.translate_srt(
         input_srt_filepath=output_file,
