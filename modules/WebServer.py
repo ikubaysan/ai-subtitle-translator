@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-web_server.py - Flask web server for AI Subtitle Translator
+web_server.py - Flask web server for Subtitle Translator
 Enabled/disabled via config.ini: [web] enabled = true/false
 """
 import os
@@ -179,7 +179,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AI Subtitle Translator</title>
+<title>Subtitle Translator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -392,7 +392,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <body>
 <div class="container">
   <header>
-    <h1>AI Subtitle<br/>Translator</h1>
+    <h1>Subtitle<br/>Translator</h1>
     <p>Upload video files or SRT files — get translated subtitles back.</p>
   </header>
 
