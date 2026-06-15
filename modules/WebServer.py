@@ -14,6 +14,8 @@ from modules.GoogleAIAPIClient import GoogleAIAPIClient
 from modules.Config import Config
 from modules.Translation import Translation
 from modules.VideoSubtitleExtractor import VideoSubtitleExtractor
+from charset_normalizer import from_path
+
 
 logger = logging.getLogger(__name__)
 
@@ -41,21 +43,12 @@ def init_server(config: Config, output_dir: str):
 
 
 def read_text_file(path: str) -> str:
-    encodings = [
-        "utf-8",
-        "utf-8-sig",
-        "cp1252",
-        "latin-1",
-    ]
+    result = from_path(path).best()
 
-    for encoding in encodings:
-        try:
-            with open(path, "r", encoding=encoding) as f:
-                return f.read()
-        except UnicodeDecodeError:
-            continue
+    if result is None:
+        raise RuntimeError(f"Could not determine encoding for {path}")
 
-    raise RuntimeError(f"Unable to decode file: {path}")
+    return str(result)
 
 def _update_job(job_id: str, **kwargs):
     with jobs_lock:
