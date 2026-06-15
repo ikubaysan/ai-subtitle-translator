@@ -40,6 +40,23 @@ def init_server(config: Config, output_dir: str):
     )
 
 
+def read_text_file(path: str) -> str:
+    encodings = [
+        "utf-8",
+        "utf-8-sig",
+        "cp1252",
+        "latin-1",
+    ]
+
+    for encoding in encodings:
+        try:
+            with open(path, "r", encoding=encoding) as f:
+                return f.read()
+        except UnicodeDecodeError:
+            continue
+
+    raise RuntimeError(f"Unable to decode file: {path}")
+
 def _update_job(job_id: str, **kwargs):
     with jobs_lock:
         if job_id in jobs:
@@ -59,8 +76,7 @@ def _process_file(job_id: str, file_path: str, translate_to_language: str, origi
                         message="Reading SRT file…")
 
             # Count chunks for progress
-            with open(file_path, "r", encoding="utf-8") as f:
-                srt_text = f.read()
+            srt_text = read_text_file(file_path)
             chunks = Translation.split_srt_into_chunks(srt_text, split_at=100)
             total_chunks = len(chunks)
 
@@ -104,8 +120,8 @@ def _process_file(job_id: str, file_path: str, translate_to_language: str, origi
             _update_job(job_id, status="translating", progress=50,
                         message="Subtitles extracted. Starting translation…")
 
-            with open(eng_srt_path, "r", encoding="utf-8") as f:
-                srt_text = f.read()
+            srt_text = read_text_file(file_path)
+
             chunks = Translation.split_srt_into_chunks(srt_text, split_at=100)
             total_chunks = len(chunks)
 
@@ -143,8 +159,7 @@ def _process_file(job_id: str, file_path: str, translate_to_language: str, origi
 def _translate_with_progress(job_id, input_path, output_path, translate_to_language,
                               total_chunks, progress_start=20):
     """Translates an SRT, emitting progress updates per chunk."""
-    with open(input_path, "r", encoding="utf-8") as f:
-        english_srt_text = f.read()
+    english_srt_text = read_text_file(input_path)
 
     chunks = Translation.split_srt_into_chunks(english_srt_text, split_at=100)
     translated_chunks = []
