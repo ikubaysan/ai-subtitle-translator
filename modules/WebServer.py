@@ -67,38 +67,26 @@ def _process_file(job_id: str, file_path: str, translate_to_language: str, origi
             # --- SRT path ---
             _update_job(job_id, status="translating", progress=10,
                         message="Reading SRT file…")
-
-            # Count chunks for progress
-            srt_text = read_text_file(file_path)
-            chunks = Translation.split_srt_into_chunks(srt_text, split_at=100)
-            total_chunks = len(chunks)
-
-            _update_job(job_id, message=f"Translating {total_chunks} chunk(s)…", progress=20)
-
-            # Monkey-patch to get per-chunk progress
             _translate_with_progress(
                 job_id=job_id,
                 input_path=file_path,
                 output_path=output_srt,
                 translate_to_language=translate_to_language,
-                total_chunks=total_chunks,
+                progress_start=20,
             )
 
         elif lower.endswith((".mp4", ".mkv")):
             # --- Video path ---
             _update_job(job_id, status="extracting", progress=5,
                         message="Extracting subtitles from video…")
-
             extractor = VideoSubtitleExtractor(file_path)
             extracted_path = extractor.extract_subtitles()
-
             if extracted_path is None:
                 _update_job(job_id, status="error", progress=0,
                             message="No subtitles found in video file.")
                 return
 
             eng_srt_path = file_path + ".eng.srt"
-
             if extracted_path.suffix.lower() == ".sup":
                 _update_job(job_id, status="converting", progress=30,
                             message="Converting PGS/SUP subtitles to SRT via OCR…")
@@ -112,18 +100,11 @@ def _process_file(job_id: str, file_path: str, translate_to_language: str, origi
 
             _update_job(job_id, status="translating", progress=50,
                         message="Subtitles extracted. Starting translation…")
-
-            srt_text = read_text_file(file_path)
-
-            chunks = Translation.split_srt_into_chunks(srt_text, split_at=100)
-            total_chunks = len(chunks)
-
             _translate_with_progress(
                 job_id=job_id,
                 input_path=eng_srt_path,
                 output_path=output_srt,
                 translate_to_language=translate_to_language,
-                total_chunks=total_chunks,
                 progress_start=50,
             )
         else:
@@ -136,47 +117,46 @@ def _process_file(job_id: str, file_path: str, translate_to_language: str, origi
                     message="Translation complete!",
                     result_path=output_srt,
                     result_filename=os.path.basename(output_srt))
-
     except Exception as e:
         logger.exception("Job %s failed", job_id)
         _update_job(job_id, status="error", progress=0, message=f"Error: {e}")
     finally:
-        # Clean up temp upload
         try:
             if os.path.exists(file_path):
                 os.remove(file_path)
         except Exception:
             pass
 
-
 def _translate_with_progress(job_id, input_path, output_path, translate_to_language,
-                              total_chunks, progress_start=20):
-    """Translates an SRT, emitting progress updates per chunk."""
-    english_srt_text = read_text_file(input_path)
+                              progress_start=20, split_at=100):
+    """
+    Translates an SRT using the structure-preserving approach: the file is
+    parsed locally, only subtitle *text* is sent to the AI, and the original
+    timestamps/indices are used to reconstruct the output — so the AI can't
+    corrupt SRT structure. Emits progress updates per chunk.
+    """
+    srt_text = read_text_file(input_path)
+    subtitles = Translation.parse_srt(srt_text)
 
-    chunks = Translation.split_srt_into_chunks(english_srt_text, split_at=100)
-    translated_chunks = []
-    progress_range = 100 - progress_start - 5  # leave 5% for final write
+    def progress_cb(chunk_num, total_chunks):
+        progress_range = 100 - progress_start - 5  # leave 5% for final write
+        pct = int(progress_start + (chunk_num / total_chunks) * progress_range)
+        _update_job(job_id, progress=pct,
+                    message=f"Translating chunk {chunk_num} of {total_chunks}…")
 
-    for i, chunk in enumerate(chunks):
-        pct = int(progress_start + (i / total_chunks) * progress_range)
-        _update_job(job_id,
-                    progress=pct,
-                    message=f"Translating chunk {i + 1} of {total_chunks}…")
-
-        prompt = (
-            f"Please translate the entirety of the following SRT subtitles from English to {translate_to_language}. "
-            "Preserve the same time stamps, line numbering, and overall SRT structure. "
-            "Output only the translated SRT file contents, no additional text.\n\n"
-            f"{chunk}"
-        )
-        translated_chunk = _google_api_client.send_prompt(prompt)
-        translated_chunks.append(translated_chunk)
+    Translation.translate_subtitles(
+        subtitles,
+        translate_to_language,
+        _google_api_client,
+        split_at=split_at,
+        progress_callback=progress_cb,
+    )
 
     _update_job(job_id, progress=95, message="Writing output file…")
-    translated_text = "\n\n".join(translated_chunks)
+    translated_text = Translation.compose_srt(subtitles)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(translated_text)
+
 
 
 # ---------------------------------------------------------------------------

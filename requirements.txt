@@ -7,3 +7,4 @@ babel
 flask
 numpy
 charset-normalizer
+srt
