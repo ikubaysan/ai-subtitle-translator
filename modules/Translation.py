@@ -2,6 +2,9 @@ from modules.GoogleAIAPIClient import GoogleAIAPIClient
 import os
 import re
 from babel import Locale
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Translation:
 
@@ -75,7 +78,7 @@ class Translation:
             # Translate each chunk
             translated_chunk = google_ai_client.send_prompt(prompt)
             translated_chunks.append(translated_chunk)
-            print(f"Translated chunk {i + 1}/{len(srt_chunks)} for SRT file: {input_srt_filepath}")
+            logger.info(f"Translated chunk {i + 1}/{len(srt_chunks)} for SRT file: {input_srt_filepath}")
 
         # Combine all translated chunks
         translated_text = "\n\n".join(translated_chunks)
@@ -84,7 +87,7 @@ class Translation:
         with open(output_srt_filepath, 'w', encoding='utf-8') as f:
             f.write(translated_text)
 
-        print(f"Saved translated SRT file: {output_srt_filepath}")
+        logger.info(f"Saved translated SRT file: {output_srt_filepath}")
 
 
     @staticmethod
